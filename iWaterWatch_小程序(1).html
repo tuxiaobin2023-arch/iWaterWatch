@@ -1,0 +1,745 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>iWaterWatch - 智能用水监测</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+            background: #f5f5f5;
+            color: #333;
+            overflow-x: hidden;
+        }
+
+        .container {
+            max-width: 500px;
+            margin: 0 auto;
+            background: #fff;
+            min-height: 100vh;
+        }
+
+        /* ========== Header ========== */
+        .header {
+            background: linear-gradient(135deg, #0084ff 0%, #0066cc 100%);
+            color: white;
+            padding: 20px;
+            padding-top: 30px;
+            text-align: center;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .header h1 {
+            font-size: 24px;
+            margin-bottom: 8px;
+            font-weight: 700;
+        }
+
+        .header p {
+            font-size: 12px;
+            opacity: 0.9;
+        }
+
+        /* ========== Main Dashboard ========== */
+        .dashboard {
+            padding: 20px;
+        }
+
+        .device-status {
+            background: linear-gradient(135deg, #fff9e6 0%, #fff3d9 100%);
+            border-left: 4px solid #ff9500;
+            padding: 16px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .device-status .status-text p:first-child {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 4px;
+        }
+
+        .device-status .status-text p:last-child {
+            font-size: 16px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .status-badge {
+            background: #ff9500;
+            color: white;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .status-badge.normal {
+            background: #07c160;
+        }
+
+        .status-badge.alert {
+            background: #fa5151;
+            animation: pulse 1s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+
+        /* ========== Real-time Flow Card ========== */
+        .flow-card {
+            background: linear-gradient(135deg, #e6f7ff 0%, #d9f0ff 100%);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .flow-label {
+            font-size: 12px;
+            color: #666;
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .flow-value {
+            font-size: 36px;
+            font-weight: 700;
+            color: #0084ff;
+            margin-bottom: 4px;
+        }
+
+        .flow-unit {
+            font-size: 14px;
+            color: #999;
+        }
+
+        .flow-status {
+            margin-top: 12px;
+            font-size: 13px;
+            color: #07c160;
+            font-weight: 600;
+        }
+
+        .flow-status.idle {
+            color: #999;
+        }
+
+        /* ========== Stats Grid ========== */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .stat-box {
+            background: #f9f9f9;
+            border: 1px solid #eee;
+            border-radius: 8px;
+            padding: 16px;
+            text-align: center;
+        }
+
+        .stat-box h3 {
+            font-size: 12px;
+            color: #999;
+            font-weight: 500;
+            margin-bottom: 8px;
+            text-transform: uppercase;
+        }
+
+        .stat-box .value {
+            font-size: 24px;
+            font-weight: 700;
+            color: #0084ff;
+            margin-bottom: 4px;
+        }
+
+        .stat-box .change {
+            font-size: 12px;
+            color: #07c160;
+        }
+
+        .stat-box .change.up {
+            color: #fa5151;
+        }
+
+        /* ========== Alert Section ========== */
+        .alerts-section {
+            margin-bottom: 20px;
+        }
+
+        .section-title {
+            font-size: 14px;
+            font-weight: 700;
+            color: #333;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .section-title::before {
+            content: '';
+            width: 4px;
+            height: 16px;
+            background: #0084ff;
+            border-radius: 2px;
+        }
+
+        .alert-item {
+            background: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 12px;
+            border-radius: 6px;
+            margin-bottom: 8px;
+            font-size: 13px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .alert-item.critical {
+            background: #f8d7da;
+            border-left-color: #fa5151;
+        }
+
+        .alert-item.info {
+            background: #d1ecf1;
+            border-left-color: #17a2b8;
+        }
+
+        .alert-icon {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            color: white;
+            flex-shrink: 0;
+        }
+
+        .alert-item.critical .alert-icon {
+            background: #fa5151;
+        }
+
+        .alert-item.info .alert-icon {
+            background: #17a2b8;
+        }
+
+        .alert-item.default .alert-icon {
+            background: #ffc107;
+        }
+
+        /* ========== Daily Usage Chart ========== */
+        .chart-section {
+            margin-bottom: 20px;
+        }
+
+        .chart-container {
+            background: #f9f9f9;
+            border-radius: 8px;
+            padding: 16px;
+            margin-top: 12px;
+        }
+
+        .bar-chart {
+            display: flex;
+            align-items: flex-end;
+            justify-content: space-around;
+            height: 120px;
+            gap: 6px;
+        }
+
+        .bar {
+            flex: 1;
+            background: linear-gradient(180deg, #0084ff 0%, #0066cc 100%);
+            border-radius: 4px 4px 0 0;
+            position: relative;
+            min-height: 10px;
+            transition: all 0.3s ease;
+        }
+
+        .bar:hover {
+            background: linear-gradient(180deg, #1a99ff 0%, #0077dd 100%);
+        }
+
+        .bar-label {
+            position: absolute;
+            bottom: -20px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 10px;
+            color: #999;
+            width: 30px;
+            text-align: center;
+        }
+
+        .bar-value {
+            position: absolute;
+            top: -20px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 10px;
+            font-weight: 600;
+            color: #0084ff;
+        }
+
+        /* ========== Recommendations ========== */
+        .tips-section {
+            background: linear-gradient(135deg, #e6f7ff 0%, #d9f0ff 100%);
+            border-radius: 8px;
+            padding: 16px;
+            margin-bottom: 20px;
+        }
+
+        .tips-section h3 {
+            font-size: 14px;
+            font-weight: 700;
+            color: #0084ff;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .tip-item {
+            background: white;
+            border-radius: 6px;
+            padding: 10px;
+            margin-bottom: 8px;
+            font-size: 12px;
+            line-height: 1.6;
+            color: #666;
+            border-left: 3px solid #07c160;
+        }
+
+        .tip-item:last-child {
+            margin-bottom: 0;
+        }
+
+        /* ========== Bottom Tabs ========== */
+        .bottom-tabs {
+            display: flex;
+            border-top: 1px solid #eee;
+            position: sticky;
+            bottom: 0;
+            background: white;
+        }
+
+        .tab {
+            flex: 1;
+            padding: 12px;
+            text-align: center;
+            cursor: pointer;
+            border: none;
+            background: none;
+            font-size: 12px;
+            color: #999;
+            transition: all 0.3s;
+            font-weight: 500;
+        }
+
+        .tab.active {
+            color: #0084ff;
+            border-bottom: 3px solid #0084ff;
+            margin-bottom: -1px;
+        }
+
+        .tab-content {
+            display: none;
+            padding: 20px;
+            padding-bottom: 100px;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        /* ========== Monthly Stats ========== */
+        .month-stat {
+            background: #f9f9f9;
+            border-radius: 8px;
+            padding: 12px;
+            margin-bottom: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .month-stat-left h4 {
+            font-size: 14px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 4px;
+        }
+
+        .month-stat-left p {
+            font-size: 12px;
+            color: #999;
+        }
+
+        .month-stat-right {
+            text-align: right;
+        }
+
+        .month-stat-right .number {
+            font-size: 18px;
+            font-weight: 700;
+            color: #0084ff;
+        }
+
+        .month-stat-right .compare {
+            font-size: 12px;
+            color: #07c160;
+        }
+
+        /* ========== Loading & Animations ========== */
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .flow-card, .stat-box, .alert-item {
+            animation: slideIn 0.5s ease;
+        }
+
+        /* ========== Responsive ========== */
+        @media (max-width: 480px) {
+            .header h1 {
+                font-size: 20px;
+            }
+
+            .flow-value {
+                font-size: 28px;
+            }
+
+            .stat-box .value {
+                font-size: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <h1>💧 iWaterWatch</h1>
+            <p>智能用水监测系统</p>
+        </div>
+
+        <!-- Main Content -->
+        <div style="padding-bottom: 80px;">
+            <!-- Tab 1: Dashboard -->
+            <div id="tab-home" class="tab-content active">
+                <div class="dashboard">
+                    <!-- Device Status -->
+                    <div class="device-status">
+                        <div class="status-text">
+                            <p>设备状态</p>
+                            <p>客厅主水表</p>
+                        </div>
+                        <span class="status-badge normal">正常</span>
+                    </div>
+
+                    <!-- Real-time Flow -->
+                    <div class="flow-card">
+                        <div class="flow-label">实时用水流量</div>
+                        <div class="flow-value" id="flowValue">0</div>
+                        <div class="flow-unit">L/min</div>
+                        <div class="flow-status" id="flowStatus">暂无用水</div>
+                    </div>
+
+                    <!-- Stats Grid -->
+                    <div class="stats-grid">
+                        <div class="stat-box">
+                            <h3>今日用水</h3>
+                            <div class="value" id="todayUsage">45.2</div>
+                            <div class="unit" style="font-size: 12px; color: #999;">升</div>
+                        </div>
+                        <div class="stat-box">
+                            <h3>本月用水</h3>
+                            <div class="value">1,280</div>
+                            <div class="unit" style="font-size: 12px; color: #999;">升</div>
+                        </div>
+                        <div class="stat-box">
+                            <h3>本月花费</h3>
+                            <div class="value" style="color: #ff9500;">¥38.4</div>
+                            <div class="change" style="color: #07c160;">↓ 15% vs上月</div>
+                        </div>
+                        <div class="stat-box">
+                            <h3>节水成果</h3>
+                            <div class="value" style="color: #07c160;">342</div>
+                            <div class="unit" style="font-size: 12px; color: #999;">升/月</div>
+                        </div>
+                    </div>
+
+                    <!-- Alerts -->
+                    <div class="alerts-section">
+                        <h2 class="section-title">实时提醒</h2>
+                        <div class="alert-item info" id="alert1">
+                            <div class="alert-icon">ℹ️</div>
+                            <div>
+                                <strong>用水高峰提示</strong><br>
+                                早上7-8点是用水高峰期，建议错峰用水节省20-30%
+                            </div>
+                        </div>
+                        <div class="alert-item default" id="alert2">
+                            <div class="alert-icon">⚠️</div>
+                            <div>
+                                <strong>潜在漏水风险</strong><br>
+                                昨天凌晨2-3点有持续小流量水流，可能存在漏水，建议检查马桶
+                            </div>
+                        </div>
+                        <div class="alert-item info">
+                            <div class="alert-icon">✓</div>
+                            <div>
+                                <strong>用水达标</strong><br>
+                                本月用水量已降至全区平均水平以下，继续保持！
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Daily Chart -->
+                    <div class="chart-section">
+                        <h2 class="section-title">近7天用水趋势</h2>
+                        <div class="chart-container">
+                            <div class="bar-chart">
+                                <div class="bar" style="height: 40%;">
+                                    <div class="bar-value">32L</div>
+                                    <div class="bar-label">周一</div>
+                                </div>
+                                <div class="bar" style="height: 60%;">
+                                    <div class="bar-value">48L</div>
+                                    <div class="bar-label">周二</div>
+                                </div>
+                                <div class="bar" style="height: 75%;">
+                                    <div class="bar-value">60L</div>
+                                    <div class="bar-label">周三</div>
+                                </div>
+                                <div class="bar" style="height: 50%;">
+                                    <div class="bar-value">40L</div>
+                                    <div class="bar-label">周四</div>
+                                </div>
+                                <div class="bar" style="height: 55%;">
+                                    <div class="bar-value">44L</div>
+                                    <div class="bar-label">周五</div>
+                                </div>
+                                <div class="bar" style="height: 70%;">
+                                    <div class="bar-value">56L</div>
+                                    <div class="bar-label">周六</div>
+                                </div>
+                                <div class="bar" style="height: 45%; animation: pulse 1.5s infinite;">
+                                    <div class="bar-value">45.2L</div>
+                                    <div class="bar-label">今日</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Tips -->
+                    <div class="tips-section">
+                        <h3>💡 节水小贴士</h3>
+                        <div class="tip-item">
+                            🚿 淋浴时间缩短5分钟，可节水30升/月 = 省¥0.9
+                        </div>
+                        <div class="tip-item">
+                            🚽 马桶漏水1滴/秒，月浪费2,592升，您的节水成果相当于修好50个漏水马桶！
+                        </div>
+                        <div class="tip-item">
+                            🍽️ 洗碗用水盆装水，而非开启水龙头，可节水80升/月 = 省¥2.4
+                        </div>
+                        <div class="tip-item">
+                            🌱 本月已节水342升，相当于省¥10.26，为环保贡献力量！
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tab 2: Monthly Stats -->
+            <div id="tab-month" class="tab-content">
+                <div style="padding: 20px 20px 100px;">
+                    <h2 class="section-title" style="margin-bottom: 20px;">月度统计</h2>
+
+                    <div class="month-stat">
+                        <div class="month-stat-left">
+                            <h4>2024年4月</h4>
+                            <p>本月用水数据</p>
+                        </div>
+                        <div class="month-stat-right">
+                            <div class="number">1,280L</div>
+                            <div class="compare">↓ 15% vs 3月</div>
+                        </div>
+                    </div>
+
+                    <div class="month-stat">
+                        <div class="month-stat-left">
+                            <h4>2024年3月</h4>
+                            <p>上月用水数据</p>
+                        </div>
+                        <div class="month-stat-right">
+                            <div class="number">1,510L</div>
+                            <div class="compare">↑ 8% vs 2月</div>
+                        </div>
+                    </div>
+
+                    <div class="month-stat">
+                        <div class="month-stat-left">
+                            <h4>2024年2月</h4>
+                            <p>前月用水数据</p>
+                        </div>
+                        <div class="month-stat-right">
+                            <div class="number">1,398L</div>
+                            <div class="compare">↓ 5% vs 1月</div>
+                        </div>
+                    </div>
+
+                    <div style="background: #f0f9ff; border-radius: 8px; padding: 16px; margin-top: 24px;">
+                        <h4 style="font-weight: 700; color: #0084ff; margin-bottom: 12px;">💰 成本对比</h4>
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 8px; padding-bottom: 8px; border-bottom: 1px solid #ddd;">
+                            <span style="color: #666;">本月水费</span>
+                            <strong style="color: #0084ff;">¥38.4</strong>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; padding-bottom: 8px; border-bottom: 1px solid #ddd;">
+                            <span style="color: #666;">上月水费</span>
+                            <strong>¥45.3</strong>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; margin-top: 12px;">
+                            <strong style="color: #666;">本月节省</strong>
+                            <strong style="color: #07c160; font-size: 16px;">¥6.9</strong>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tab 3: Settings -->
+            <div id="tab-settings" class="tab-content">
+                <div style="padding: 20px 20px 100px;">
+                    <h2 class="section-title" style="margin-bottom: 20px;">设置</h2>
+
+                    <div style="background: #f9f9f9; border-radius: 8px; padding: 16px; margin-bottom: 16px;">
+                        <h4 style="font-weight: 700; margin-bottom: 12px;">📱 设备信息</h4>
+                        <div style="font-size: 13px; line-height: 2;">
+                            <div><span style="color: #999;">设备名称：</span>客厅主水表</div>
+                            <div><span style="color: #999;">设备ID：</span>WM2024001</div>
+                            <div><span style="color: #999;">信号强度：</span><span style="color: #07c160;">-65dBm (优)</span></div>
+                            <div><span style="color: #999;">最后更新：</span>2分钟前</div>
+                            <div><span style="color: #999;">电池电量：</span><span style="color: #0084ff;">92%</span></div>
+                        </div>
+                    </div>
+
+                    <div style="background: #f9f9f9; border-radius: 8px; padding: 16px; margin-bottom: 16px;">
+                        <h4 style="font-weight: 700; margin-bottom: 12px;">🔔 提醒设置</h4>
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; padding-bottom: 12px; border-bottom: 1px solid #eee;">
+                            <span style="font-size: 13px;">异常流量警报</span>
+                            <input type="checkbox" checked style="cursor: pointer;">
+                        </div>
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; padding-bottom: 12px; border-bottom: 1px solid #eee;">
+                            <span style="font-size: 13px;">每日用水总结</span>
+                            <input type="checkbox" checked style="cursor: pointer;">
+                        </div>
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <span style="font-size: 13px;">节水建议推荐</span>
+                            <input type="checkbox" checked style="cursor: pointer;">
+                        </div>
+                    </div>
+
+                    <div style="background: #f9f9f9; border-radius: 8px; padding: 16px;">
+                        <h4 style="font-weight: 700; margin-bottom: 12px;">📊 关于</h4>
+                        <div style="font-size: 13px; color: #999; line-height: 1.8;">
+                            <p><strong>iWaterWatch v1.0.1</strong></p>
+                            <p>智能用水监测系统，帮助您节水省钱。</p>
+                            <p>© 2024 iWaterWatch Team</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Bottom Navigation -->
+        <div class="bottom-tabs">
+            <button class="tab active" onclick="switchTab('home')">🏠 首页</button>
+            <button class="tab" onclick="switchTab('month')">📈 统计</button>
+            <button class="tab" onclick="switchTab('settings')">⚙️ 设置</button>
+        </div>
+    </div>
+
+    <script>
+        // Tab switching
+        function switchTab(tabName) {
+            // Hide all tabs
+            document.querySelectorAll('.tab-content').forEach(el => {
+                el.classList.remove('active');
+            });
+            document.querySelectorAll('.tab').forEach(el => {
+                el.classList.remove('active');
+            });
+
+            // Show selected tab
+            document.getElementById('tab-' + tabName).classList.add('active');
+            event.target.classList.add('active');
+        }
+
+        // Simulate real-time flow data
+        function updateFlowData() {
+            const rand = Math.random();
+            const flowValue = rand > 0.7 ? Math.random() * 8 : 0;
+            const displayValue = flowValue.toFixed(1);
+
+            document.getElementById('flowValue').textContent = displayValue;
+            
+            const statusEl = document.getElementById('flowStatus');
+            if (flowValue > 0) {
+                statusEl.textContent = '用水中...';
+                statusEl.classList.remove('idle');
+            } else {
+                statusEl.textContent = '暂无用水';
+                statusEl.classList.add('idle');
+            }
+
+            // Update today's usage (simulate small increase)
+            const todayEl = document.getElementById('todayUsage');
+            let currentValue = parseFloat(todayEl.textContent);
+            if (flowValue > 0) {
+                currentValue += flowValue * 0.01;
+                todayEl.textContent = currentValue.toFixed(1);
+            }
+        }
+
+        // Update flow data every 3 seconds
+        setInterval(updateFlowData, 3000);
+        updateFlowData(); // Initial call
+
+        // Add click animation to alerts
+        document.querySelectorAll('.alert-item').forEach(item => {
+            item.addEventListener('click', function() {
+                this.style.transform = 'scale(0.98)';
+                setTimeout(() => {
+                    this.style.transform = 'scale(1)';
+                }, 100);
+            });
+        });
+    </script>
+</body>
+</html>
